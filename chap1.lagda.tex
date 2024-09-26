@@ -78,4 +78,52 @@ not : Bool → Bool
 not true = false
 not false = true
 \end{code}
+
+\begin{code}
+id : {A : Set} → A → A
+id x = x
+
+data List (A : Set) : Set where
+    [] : List A
+    _::_ : A → List A → List A
+
+infixr 5 _::_
+
+data _×_ (A B : Set) : Set where
+    _,_ : A → B → A × B
+
+fst : {A B : Set} → A × B → A
+fst (x , _) = x
+
+snd : {A B : Set} → A × B → B
+snd (_ , y) = y
+\end{code}
+
+\textsc{Exercise 1.4}
+\begin{code}
+length : {A : Set} → List A → Nat
+length [] = 0
+length (x :: xs) = suc (length xs)
+
+_++_ : {A : Set} → List A → List A → List A
+[] ++ ys = ys
+(x :: xs) ++ ys = x :: (xs ++ ys)
+
+map : {A B : Set} → (A → B) → List A → List B
+map f [] = []
+map f (x :: xs) = f x :: map f xs
+\end{code}
+
+\textsc{Exercise 1.5}
+\begin{code}
+data Maybe (A : Set) : Set where
+    nothing : Maybe A
+    just : A -> Maybe A
+
+lookup : {A : Set} → List A → Nat → Maybe A
+lookup [] _ = nothing
+lookup (x :: xs) zero = just x
+lookup (x :: xs) (suc i) = lookup xs i
+\end{code}
+
 \end{document}
