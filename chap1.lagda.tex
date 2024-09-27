@@ -11,7 +11,7 @@
 
 \DefineVerbatimEnvironment{code}{Verbatim}{baselinestretch=.8, samepage=true}
 
-\setmainfont{Garamond Premier Pro}[Contextuals=AlternateOff]
+\setmainfont{Garamond Premier Pro}[Contextuals=AlternateOff, Numbers=OldStyle]
 \setmathfont{Libertinus Math}[Scale=MatchUppercase]
 \setmonofont{JuliaMono}[Scale=0.7]
 
@@ -526,14 +526,7 @@ Prove that the length of \verb!replicate n x! is always equal to $n$, by inducti
 
 \begin{code}
 repl-length : {A : Set} → (n : Nat) → (x : A) → length (replicate n x) ≡ n
-repl-length zero x =
-    begin
-      length (replicate zero x)
-    ≡⟨⟩ -- Apply replicate
-      length []
-    ≡⟨⟩ -- Apply length
-      zero
-    end
+repl-length zero x = refl -- length [] ≡ zero
 repl-length (suc n) x =
     begin
       length (replicate (suc n) x)
@@ -541,20 +534,102 @@ repl-length (suc n) x =
       length (x :: replicate n x)
     ≡⟨⟩ -- Apply length
       suc (length (replicate n x))
-    ≡⟨ cong suc (repl-length n x) ⟩ -- Apply induction
+    ≡⟨ cong suc (repl-length n x) ⟩
       suc n
     end
 \end{code}
 
+\noindent
+\textsc{Exercise 4.3}: The proofs of the lemmas:
+
+\begin{code}
+append-[] : {A : Set} → (xs : List A) → xs ++ [] ≡ xs
+append-[] [] = begin ([] ++ []) ≡⟨⟩ [] end
+append-[] (x :: xs) =
+    begin
+      (x :: xs) ++ []
+    ≡⟨⟩ -- Apply ++
+      x :: (xs ++ [])
+    ≡⟨ cong (x ::_) (append-[] xs) ⟩
+      x :: xs
+    end
+
+append-assoc : {A : Set} → (xs ys zs : List A)
+    → (xs ++ ys) ++ zs ≡ xs ++ (ys ++ zs)
+append-assoc [] ys zs =
+    begin
+      ([] ++ ys) ++ zs
+    ≡⟨⟩ -- Apply ++
+      ys ++ zs
+    ≡⟨⟩ -- Unapply ++
+      [] ++ (ys ++ zs)
+    end
+append-assoc (x :: xs) ys zs =
+    begin
+      ((x :: xs) ++ ys) ++ zs
+    ≡⟨⟩ -- Apply ++
+      (x :: (xs ++ ys)) ++ zs
+    ≡⟨⟩ -- Apply ++
+      x :: ((xs ++ ys) ++ zs)
+    ≡⟨ cong (x ::_) (append-assoc xs ys zs) ⟩
+      x :: (xs ++ (ys ++ zs))
+    ≡⟨⟩ -- Unapply ++
+      (x :: xs) ++ (ys ++ zs)
+    end
+\end{code}
+
+\noindent
+Now we can prove distributivity of reverse:
+
 \begin{code}
 reverse-distributivity : {A : Set} → (xs ys : List A)
     → reverse (xs ++ ys) ≡ reverse ys ++ reverse xs
-reverse-distributivity [] ys = {!   !}
-reverse-distributivity (x :: xs) ys = {!   !}
+reverse-distributivity [] ys =
+    begin
+      reverse ([] ++ ys)
+    ≡⟨⟩ -- Apply ++
+      reverse ys
+    ≡⟨ sym (append-[] (reverse ys)) ⟩ -- Use the append-[] lemma
+      reverse ys ++ []
+    ≡⟨⟩ -- Unapply reverse to []
+      reverse ys ++ reverse []
+    end
+\end{code}
+\begin{code}
+reverse-distributivity (x :: xs) ys =
+    begin
+      reverse ((x :: xs) ++ ys)
+    ≡⟨⟩ -- Apply ++
+      reverse (x :: (xs ++ ys))
+    ≡⟨⟩ -- Apply reverse
+      reverse (xs ++ ys) ++ [ x ]
+    ≡⟨ cong (_++ [ x ]) (reverse-distributivity xs ys) ⟩
+      (reverse ys ++ reverse xs) ++ [ x ]
+    ≡⟨ append-assoc (reverse ys) (reverse xs) [ x ] ⟩
+      reverse ys ++ (reverse xs ++ [ x ])
+    ≡⟨⟩ -- Unapply reverse
+      reverse ys ++ reverse (x :: xs)
+    end
+\end{code}
 
+\noindent
+And that reversing twice is idempotent:
+
+\begin{code}
 reverse-reverse : {A : Set} → (xs : List A) → reverse (reverse xs) ≡ xs
 reverse-reverse [] = refl
-reverse-reverse (x :: xs) = {!   !}
+reverse-reverse (x :: xs) =
+    begin
+      reverse (reverse (x :: xs))
+    ≡⟨⟩ -- Apply inner reverse
+      reverse (reverse xs ++ [ x ])
+    ≡⟨ reverse-distributivity (reverse xs) [ x ] ⟩
+      reverse [ x ] ++ reverse (reverse xs)
+    ≡⟨ cong ([ x ] ++_) (reverse-reverse xs) ⟩
+      [ x ] ++ xs
+    ≡⟨⟩ -- Apply ++
+      x :: xs
+    end
 \end{code}
 
 \end{document}
