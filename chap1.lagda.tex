@@ -108,7 +108,7 @@ snd (_ , y) = y
 
 \begin{code}
 length : {A : Set} → List A → Nat
-length [] = 0
+length [] = zero
 length (x :: xs) = suc (length xs)
 
 _++_ : {A : Set} → List A → List A → List A
@@ -136,12 +136,12 @@ lookup (x :: xs) (suc i) = lookup xs i
 
 \begin{code}
 data Vec (A : Set) : Nat → Set where
-    [] : Vec A 0
+    [] : Vec A zero
     _::_ : {n : Nat} → A → Vec A n → Vec A (suc n)
 
-replicate : {A : Set} → (n : Nat) → A → Vec A n
-replicate zero x = []
-replicate (suc n) x = x :: replicate n x
+replicateVec : {A : Set} → (n : Nat) → A → Vec A n
+replicateVec zero x = []
+replicateVec (suc n) x = x :: replicateVec n x
 \end{code}
 
 \noindent
@@ -176,7 +176,7 @@ tail (_ :: xs) = xs
 
 \begin{code}
 dotProduct : {n : Nat} → Vec Nat n → Vec Nat n → Nat
-dotProduct [] [] = 0
+dotProduct [] [] = zero
 dotProduct (x :: xs) (y :: ys) = x * y + dotProduct xs ys
 \end{code}
 
@@ -237,7 +237,7 @@ List' A = Σ Nat (Vec A)
 
 \begin{code}
 []' : {A : Set} → List' A
-[]' = 0 , []
+[]' = zero , []
 
 _::'_ : {A : Set} → A → List' A → List' A
 x ::' (n , xs) = suc n , (x :: xs)
@@ -247,7 +247,7 @@ fromList [] = []'
 fromList (x :: xs) = x ::' fromList xs
 
 fromList' : {A : Set} → List' A → List A
-fromList' (0 , []) = []
+fromList' (zero , []) = []
 fromList' (suc n , (x :: xs)) = x :: (fromList' (n , xs))
 \end{code}
 
@@ -365,7 +365,7 @@ half-a-dozen : Σ Nat (λ n → IsTrue ((n + n) =Nat 12))
 half-a-dozen = 6 , TrueIsTrue
 
 zero-or-suc : (n : Nat) → Either
-    (IsTrue (n =Nat 0))
+    (IsTrue (n =Nat zero))
     (Σ Nat (λ m → IsTrue (n =Nat (suc m))))
 zero-or-suc zero = left TrueIsTrue
 zero-or-suc (suc m) = right (m , n-equals-n m)
@@ -417,5 +417,144 @@ cong : {A B : Set} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
 cong f refl = refl
 \end{code}
 
+\noindent
+\textsc{Equational Reasoning}
+
+\begin{code}
+begin_ : {A : Set} → {x y : A} → x ≡ y → x ≡ y
+begin p = p
+
+_end : {A : Set} → (x : A) → x ≡ x
+x end = refl
+
+_≡⟨_⟩_ : {A : Set} → (x : A) → {y z : A}
+    → x ≡ y → y ≡ z → x ≡ z
+x ≡⟨ p ⟩ q = trans p q
+
+_≡⟨⟩_ : {A : Set} → (x : A) → {y : A} → x ≡ y → x ≡ y
+x ≡⟨⟩ q = x ≡⟨ refl ⟩ q
+
+infix 1 begin_
+infix 3 _end
+infixr 2 _≡⟨_⟩_
+infixr 2 _≡⟨⟩_
+\end{code}
+
+\noindent
+Simple examples:
+
+\begin{code}
+[_] : {A : Set} → A → List A
+[ x ] = x :: []
+
+reverse : {A : Set} → List A → List A
+reverse [] = []
+reverse (x :: xs) = reverse xs ++ [ x ]
+
+reverse-singleton : {A : Set} (x : A) → reverse [ x ] ≡ [ x ]
+reverse-singleton x =
+    begin
+      reverse [ x ]
+    ≡⟨⟩
+      reverse (x :: [])
+    ≡⟨⟩
+      reverse [] ++ [ x ]
+    ≡⟨⟩
+      [] ++ [ x ]
+    ≡⟨⟩
+      [ x ]
+    end
+\end{code}
+
+\noindent
+Proof by induction and cases:
+
+\begin{code}
+add-n-zero : (n : Nat) → n + zero ≡ n
+add-n-zero zero = refl
+add-n-zero (suc n) =
+    begin
+      suc n + zero
+    ≡⟨⟩
+      suc (n + zero)
+    ≡⟨ cong suc (add-n-zero n) ⟩
+      suc n
+    end
+\end{code}
+
+\noindent
+\textsc{Exercise 4.1}: Prove that \verb!m + suc n = suc (m + n)! for all natural numbers $m$ and $n$. Next, use the previous lemma and this one to prove commutativity of addition, i.e. that $m + n = n + m$ for all natural numbers $m$ and $n$.
+
+\begin{code}
+add-suc : (m n : Nat) → m + suc n ≡ suc (m + n)
+add-suc zero n = refl
+add-suc (suc m) n = cong suc (add-suc m n)
+
+add-commut : (m n : Nat) → m + n ≡ n + m
+add-commut zero n = sym (add-n-zero n)
+add-commut (suc m) n =
+    begin
+      suc m + n
+    ≡⟨⟩
+      suc (m + n)
+    ≡⟨ cong suc (add-commut m n) ⟩
+      suc (n + m)
+    ≡⟨ sym (add-suc n m) ⟩
+      n + suc m
+    end
+
+add-commut' : (m n : Nat) → m + n ≡ n + m
+add-commut' zero n = sym (add-n-zero n)
+add-commut' (suc m) n =
+    trans (cong suc (add-commut' m n)) (sym (add-suc n m))
+\end{code}
+
+\begin{code}
+add-assoc : (x y z : Nat) → x + (y + z) ≡ (x + y) + z
+add-assoc zero y z = refl
+add-assoc (suc x) y z = cong suc (add-assoc x y z)
+\end{code}
+
+\noindent
+\textsc{Exercise 4.2}: Consider the following function:
+\begin{code}
+replicate : {A : Set} → Nat → A → List A
+replicate zero x = []
+replicate (suc n) x = x :: replicate n x
+\end{code}
+Prove that the length of \verb!replicate n x! is always equal to $n$, by induction on the number $n$.
+
+\begin{code}
+repl-length : {A : Set} → (n : Nat) → (x : A) → length (replicate n x) ≡ n
+repl-length zero x =
+    begin
+      length (replicate zero x)
+    ≡⟨⟩ -- Apply replicate
+      length []
+    ≡⟨⟩ -- Apply length
+      zero
+    end
+repl-length (suc n) x =
+    begin
+      length (replicate (suc n) x)
+    ≡⟨⟩ -- Apply replicate
+      length (x :: replicate n x)
+    ≡⟨⟩ -- Apply length
+      suc (length (replicate n x))
+    ≡⟨ cong suc (repl-length n x) ⟩ -- Apply induction
+      suc n
+    end
+\end{code}
+
+\begin{code}
+reverse-distributivity : {A : Set} → (xs ys : List A)
+    → reverse (xs ++ ys) ≡ reverse ys ++ reverse xs
+reverse-distributivity [] ys = {!   !}
+reverse-distributivity (x :: xs) ys = {!   !}
+
+reverse-reverse : {A : Set} → (xs : List A) → reverse (reverse xs) ≡ xs
+reverse-reverse [] = refl
+reverse-reverse (x :: xs) = {!   !}
+\end{code}
+
 \end{document}
- 
