@@ -277,28 +277,28 @@ absurd ()
 \noindent
 \textsc{Exercise 3.2}
 \begin{itemize}
-\item If \textit{A} then (\textit{B} implies \textit{A})
+\item If $A$ then ($B$ implies $A$)
 \begin{code}
 p1 : {A B : Set} → A → (B → A)
-p1 x _ = x
+p1 x = λ _ → x
 \end{code}
-\item If (\textit{A} and \textit{true}) then (\textit{A} or \textit{false})
+\item If ($A$ and $\mathit{true}$) then ($A$ or $\mathit{false}$)
 \begin{code}
 p2 : {A : Set} → (A × ⊤) → (Either A ⊥)
 p2 (x , tt) = left x
 \end{code}
-\item If \textit{A} implies (\textit{B} implies \textit{C}), then (\textit{A} and \textit{B}) implies \textit{C}.
+\item If $A$ implies ($B$ implies $C$), then ($A$ and $B$) implies $C$.
 \begin{code}
 p3 : {A B C : Set} → (A → (B → C)) → ((A × B) → C)
 p3 f (x , y) = f x y
 \end{code}
-\item If \textit{A} and (\textit{B} or \textit{C}), then either (\textit{A} and \textit{B}) or (\textit{A} and \textit{C}).
+\item If $A$ and ($B$ or $C$), then either ($A$ and $B$) or ($A$ and $C$).
 \begin{code}
 p4 : {A B C : Set} → (A × (Either B C)) → (Either (A × B) (A × C))
 p4 (x , left y) = left (x , y)
 p4 (x , right z) = right (x , z)
 \end{code}
-\item If A implies C and B implies D, then (A and B) implies (C and D).
+\item If $A$ implies $C$ and $B$ implies $D$, then ($A$ and $B$) implies ($C$ and $D$).
 \begin{code}
 p5 : {A B C D : Set} → ((A → C) × (B → D)) → ((A × B) → (C × D))
 p5 (f , g) (x , y) = f x , g y
@@ -313,11 +313,12 @@ proof3 f = (λ x → f (left x)) , (λ x → f (right x))
 \noindent
 \textsc{Exercise 3.3}: Write a function of type \verb!{P : Set} → (Either P (P → ⊥) → ⊥) → ⊥!.
 
-Assuming \verb!(Either P (P → ⊥) → ⊥)! then \texttt{proof3} above says that \verb!P → ⊥! and \verb!(P → ⊥) → ⊥!. Applying \verb!(P → ⊥) → ⊥! to \verb!P → ⊥! results in \verb!⊥! which proves the theorem.
+Assuming \verb!(Either P (P → ⊥) → ⊥)! then \texttt{proof3} above says that \verb!P → ⊥! and \verb!(P → ⊥) → ⊥!. Applying \verb!(P → ⊥) → ⊥! to \verb!P → ⊥! results in \verb!⊥! which proves the proposition.
 
 \begin{code}
 constructive-P-or-not-P : {P : Set} → (Either P (P → ⊥) → ⊥) → ⊥
-constructive-P-or-not-P f = (λ notx → f (right notx)) (λ x → f (left x))
+constructive-P-or-not-P {P} f =
+    (λ (x : P → ⊥) → f (right x)) (λ (x : P) → f (left x))
 \end{code}
 
 \noindent Some even stuff:
@@ -359,6 +360,61 @@ double-is-even (suc n) = sucsucIsEven (double-is-even n)
 n-equals-n : (n : Nat) → IsTrue (n =Nat n)
 n-equals-n zero = TrueIsTrue
 n-equals-n (suc n) = n-equals-n n
+
+half-a-dozen : Σ Nat (λ n → IsTrue ((n + n) =Nat 12))
+half-a-dozen = 6 , TrueIsTrue
+
+zero-or-suc : (n : Nat) → Either
+    (IsTrue (n =Nat 0))
+    (Σ Nat (λ m → IsTrue (n =Nat (suc m))))
+zero-or-suc zero = left TrueIsTrue
+zero-or-suc (suc m) = right (m , n-equals-n m)
+\end{code}
+
+\noindent
+\textsc{The Identity Type}
+
+\begin{code}
+data _≡_ {A : Set} : A → A → Set where
+    refl : {x : A} → x ≡ x
+
+infix 4 _≡_
+
+n-equals-n-≡ : (n : Nat) → n ≡ n
+n-equals-n-≡ n = refl
+
+zero-not-one : 0 ≡ 1 → ⊥
+zero-not-one ()
+\end{code}
+
+\noindent
+I am curious about an equivalency that must take an argument:
+
+\begin{code}
+data _≡'_ {A : Set} : A → A → Set where
+    refl : (x : A) → x ≡' x
+
+infix 4 _≡'_
+
+n-equals-n-≡' : (n : Nat) → n ≡' n
+n-equals-n-≡' n = refl n
+
+n-equals-n-≡'' : (n : Nat) → n ≡' n
+n-equals-n-≡'' = refl
+\end{code}
+
+\noindent
+Various laws of equivalency:
+
+\begin{code}
+sym : {A : Set} {x y : A} → x ≡ y → y ≡ x
+sym refl = refl
+
+trans : {A : Set} {x y z : A} → x ≡ y → y ≡ z → x ≡ z
+trans refl refl = refl
+
+cong : {A B : Set} {x y : A} → (f : A → B) → x ≡ y → f x ≡ f y
+cong f refl = refl
 \end{code}
 
 \end{document}
