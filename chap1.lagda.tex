@@ -13,7 +13,7 @@
 
 \setmainfont{Garamond Premier Pro}[Contextuals=AlternateOff]
 \setmathfont{Libertinus Math}[Scale=MatchUppercase]
-\setmonofont{Monaspace Argon}[Scale=0.7]
+\setmonofont{JuliaMono}[Scale=0.7]
 
 \setlength{\parindent}{1em}
 \setlist{noitemsep}
@@ -45,10 +45,12 @@ data Nat : Set where
 _+_ : Nat → Nat → Nat
 zero + y = y
 suc x + y = suc (x + y)
+
+infixl 6  _+_
 \end{code}
 
 \noindent
-\textsc{Exercise 1.1} Define the function \ttx{halve : Nat → Nat} that computes the result of dividing the given number by 2 (rounded down). Test your definition by evaluating it for several concrete inputs.
+\textsc{Exercise 1.1}: Define the function \ttx{halve : Nat → Nat} that computes the result of dividing the given number by 2 (rounded down). Test your definition by evaluating it for several concrete inputs.
 
 \begin{code}
 halve : Nat → Nat
@@ -58,16 +60,18 @@ halve (suc (suc n)) = halve n + 1
 \end{code}
 
 \noindent
-\textsc{Exercise 1.2} Define the function \ttx{_*_ : Nat → Nat → Nat} for multiplication of two natural numbers.
+\textsc{Exercise 1.2}: Define the function \ttx{_*_ : Nat → Nat → Nat} for multiplication of two natural numbers.
 
 \begin{code}
 _*_ : Nat → Nat → Nat
 0 * y = 0
 suc x * y = y + (x * y)
+
+infixl 7  _*_
 \end{code}
 
 \noindent
-\textsc{Exercise 1.3} Define the type Bool with constructors true and false, and define the functions for negation \verb$not : Bool → Bool$, conjunction \verb$_&&_ : Bool → Bool → Bool$, and disjunction \verb$_||_ : Bool → Bool → Bool$ by pattern matching.
+\textsc{Exercise 1.3}: Define the type Bool with constructors true and false, and define the functions for negation \verb$not : Bool → Bool$, conjunction \verb$_&&_ : Bool → Bool → Bool$, and disjunction \verb$_||_ : Bool → Bool → Bool$ by pattern matching.
 
 \begin{code}
 data Bool : Set where
@@ -99,7 +103,9 @@ snd : {A B : Set} → A × B → B
 snd (_ , y) = y
 \end{code}
 
-\textsc{Exercise 1.4}
+\noindent
+\textsc{Exercise 1.4}:
+
 \begin{code}
 length : {A : Set} → List A → Nat
 length [] = 0
@@ -114,11 +120,13 @@ map f [] = []
 map f (x :: xs) = f x :: map f xs
 \end{code}
 
-\textsc{Exercise 1.5}
+\noindent
+\textsc{Exercise 1.5}:
+
 \begin{code}
 data Maybe (A : Set) : Set where
     nothing : Maybe A
-    just : A -> Maybe A
+    just : A → Maybe A
 
 lookup : {A : Set} → List A → Nat → Maybe A
 lookup [] _ = nothing
@@ -126,4 +134,232 @@ lookup (x :: xs) zero = just x
 lookup (x :: xs) (suc i) = lookup xs i
 \end{code}
 
+\begin{code}
+data Vec (A : Set) : Nat → Set where
+    [] : Vec A 0
+    _::_ : {n : Nat} → A → Vec A n → Vec A (suc n)
+
+replicate : {A : Set} → (n : Nat) → A → Vec A n
+replicate zero x = []
+replicate (suc n) x = x :: replicate n x
+\end{code}
+
+\noindent
+\textsc{Exercise 2.1}:
+
+\begin{code}
+downFrom : (n : Nat) → Vec Nat n
+downFrom zero = []
+downFrom (suc x) = x :: downFrom x
+\end{code}
+
+\begin{code}
+_++Vec_ : {A : Set} {m n : Nat}
+    → Vec A m → Vec A n → Vec A (m + n)
+[] ++Vec ys = ys
+(x :: xs) ++Vec ys = x :: (xs ++Vec ys)
+
+head : {A : Set} {n : Nat} → Vec A (suc n) → A
+head (x :: _) = x
+\end{code}
+
+\noindent
+\textsc{Exercise 2.2}:
+
+\begin{code}
+tail : {A : Set} {n : Nat} → Vec A (suc n) → Vec A n
+tail (_ :: xs) = xs
+\end{code}
+
+\noindent
+\textsc{Exercise 2.3}:
+
+\begin{code}
+dotProduct : {n : Nat} → Vec Nat n → Vec Nat n → Nat
+dotProduct [] [] = 0
+dotProduct (x :: xs) (y :: ys) = x * y + dotProduct xs ys
+\end{code}
+
+\begin{code}
+data Fin : Nat → Set where
+    zero : {n : Nat} → Fin (suc n)
+    suc : {n : Nat} → Fin n → Fin (suc n)
+
+zero3 : Fin 3
+zero3 = zero
+
+lookupVec : {A : Set} {n : Nat} → Vec A n → Fin n → A
+lookupVec (x :: xs) zero = x
+lookupVec (x :: xs) (suc i) = lookupVec xs i
+\end{code}
+
+\noindent
+\textsc{Exercise 2.4}:
+
+\begin{code}
+putVec : {A : Set} {n : Nat} → Fin n → A → Vec A n → Vec A n
+putVec zero x (_ :: xs) = x :: xs
+putVec (suc i) x (x₁ :: xs) = x₁ :: putVec i x xs
+\end{code}
+
+\begin{code}
+data Σ (A : Set) (B : A → Set) : Set where
+    _,_ : (x : A) → B x → Σ A B
+
+fstΣ : {A : Set} {B : A → Set} → Σ A B → A
+fstΣ (x , _) = x
+
+sndΣ : {A : Set} {B : A → Set} → (z : Σ A B) → B (fstΣ z)
+sndΣ (x , y) = y
+
+_×'_ : (A B : Set) → Set
+A ×' B = Σ A (λ _ → B)
+\end{code}
+
+\noindent
+\textsc{Exercise 2.5}:
+
+\begin{code}
+fromProd : {A B : Set} → A × B → A ×' B
+fromProd (x , y) = x , y
+
+toProd : {A B : Set} → A ×' B → A × B
+toProd (x , y) = x , y
+\end{code}
+
+\begin{code}
+List' : (A : Set) → Set
+List' A = Σ Nat (Vec A)
+\end{code}
+
+\noindent
+\textsc{Exercise 2.6}:
+
+\begin{code}
+[]' : {A : Set} → List' A
+[]' = 0 , []
+
+_::'_ : {A : Set} → A → List' A → List' A
+x ::' (n , xs) = suc n , (x :: xs)
+
+fromList : {A : Set} → List A → List' A
+fromList [] = []'
+fromList (x :: xs) = x ::' fromList xs
+
+fromList' : {A : Set} → List' A → List A
+fromList' (0 , []) = []
+fromList' (suc n , (x :: xs)) = x :: (fromList' (n , xs))
+\end{code}
+
+\noindent
+\textsc{Exercise 3.1}:
+
+\begin{code}
+data Either (A : Set) (B : Set) : Set where
+    left : A → Either A B
+    right : B → Either A B
+
+cases : {A B C : Set} → Either A B → (A → C) → (B → C) → C
+cases (left x) f _ = f x
+cases (right x) _ f = f x
+\end{code}
+
+\begin{code}
+data ⊤ : Set where
+    tt : ⊤
+
+data ⊥ : Set where
+
+absurd : {A : Set} → ⊥ → A
+absurd ()
+\end{code}
+
+\noindent
+\textsc{Exercise 3.2}
+\begin{itemize}
+\item If \textit{A} then (\textit{B} implies \textit{A})
+\begin{code}
+p1 : {A B : Set} → A → (B → A)
+p1 x _ = x
+\end{code}
+\item If (\textit{A} and \textit{true}) then (\textit{A} or \textit{false})
+\begin{code}
+p2 : {A : Set} → (A × ⊤) → (Either A ⊥)
+p2 (x , tt) = left x
+\end{code}
+\item If \textit{A} implies (\textit{B} implies \textit{C}), then (\textit{A} and \textit{B}) implies \textit{C}.
+\begin{code}
+p3 : {A B C : Set} → (A → (B → C)) → ((A × B) → C)
+p3 f (x , y) = f x y
+\end{code}
+\item If \textit{A} and (\textit{B} or \textit{C}), then either (\textit{A} and \textit{B}) or (\textit{A} and \textit{C}).
+\begin{code}
+p4 : {A B C : Set} → (A × (Either B C)) → (Either (A × B) (A × C))
+p4 (x , left y) = left (x , y)
+p4 (x , right z) = right (x , z)
+\end{code}
+\item If A implies C and B implies D, then (A and B) implies (C and D).
+\begin{code}
+p5 : {A B C D : Set} → ((A → C) × (B → D)) → ((A × B) → (C × D))
+p5 (f , g) (x , y) = f x , g y
+\end{code}
+\end{itemize}
+
+\begin{code}
+proof3 : {P Q R : Set} → (Either P Q → R) → (P → R) × (Q → R)
+proof3 f = (λ x → f (left x)) , (λ x → f (right x))
+\end{code}
+
+\noindent
+\textsc{Exercise 3.3}: Write a function of type \verb!{P : Set} → (Either P (P → ⊥) → ⊥) → ⊥!.
+
+Assuming \verb!(Either P (P → ⊥) → ⊥)! then \texttt{proof3} above says that \verb!P → ⊥! and \verb!(P → ⊥) → ⊥!. Applying \verb!(P → ⊥) → ⊥! to \verb!P → ⊥! results in \verb!⊥! which proves the theorem.
+
+\begin{code}
+constructive-P-or-not-P : {P : Set} → (Either P (P → ⊥) → ⊥) → ⊥
+constructive-P-or-not-P f = (λ notx → f (right notx)) (λ x → f (left x))
+\end{code}
+
+\noindent Some even stuff:
+
+\begin{code}
+data IsEven : Nat → Set where
+    zeroIsEven : IsEven zero
+    sucsucIsEven : {n : Nat} → IsEven n → IsEven (suc (suc n))
+
+6-is-even : IsEven 6
+6-is-even = sucsucIsEven (sucsucIsEven (sucsucIsEven zeroIsEven))
+
+7-is-even : IsEven 7 → ⊥
+7-is-even (sucsucIsEven (sucsucIsEven (sucsucIsEven ())))
+
+data IsTrue : Bool → Set where
+    TrueIsTrue : IsTrue true
+
+_=Nat_ : Nat → Nat → Bool
+zero =Nat zero = true
+suc x =Nat suc y = x =Nat y
+_ =Nat _ = false
+
+length-is-3 : IsTrue (length (1 :: 2 :: 3 :: []) =Nat 3)
+length-is-3 = TrueIsTrue
+\end{code}
+
+\begin{code}
+double : Nat → Nat
+double zero = zero
+double (suc n) = suc (suc (double n))
+
+double-is-even : (n : Nat) → IsEven (double n)
+double-is-even zero = zeroIsEven
+double-is-even (suc n) = sucsucIsEven (double-is-even n)
+\end{code}
+
+\begin{code}
+n-equals-n : (n : Nat) → IsTrue (n =Nat n)
+n-equals-n zero = TrueIsTrue
+n-equals-n (suc n) = n-equals-n n
+\end{code}
+
 \end{document}
+ 
