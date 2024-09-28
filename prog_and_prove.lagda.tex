@@ -632,4 +632,102 @@ reverse-reverse (x :: xs) =
     end
 \end{code}
 
+\noindent
+Functor laws for lists:
+
+\begin{code}
+map-id : { A : Set } → (xs : List A) → map id xs ≡ xs
+map-id [] =
+  begin
+    map id []
+  ≡⟨⟩ -- Apply map
+    []
+  end
+map-id (x :: xs) =
+  begin
+    map id (x :: xs)
+  ≡⟨⟩ -- Apply map and id
+    x :: (map id xs)
+  ≡⟨ cong (x ::_) (map-id xs) ⟩
+    x :: xs
+  end
+\end{code}
+
+\begin{code}
+_◦_ : {A B C : Set} → (B → C) → (A → B) → (A → C)
+f ◦ g = λ x → f (g x)
+
+infixr 9 _◦_
+
+map-compose : {A B C : Set} → (f : B → C) → (g : A → B)
+    → (xs : List A) → map (f ◦ g) xs ≡ map f (map g xs)
+map-compose f g [] = refl
+map-compose f g (x :: xs) =
+  begin
+    map (f ◦ g) (x :: xs)
+  ≡⟨⟩ -- Apply map
+    (f ◦ g) x :: map (f ◦ g) xs
+  ≡⟨ cong (f (g x) ::_) (map-compose f g xs) ⟩ -- Also apply ◦
+    f (g x) :: map f (map g xs)
+  ≡⟨⟩ -- Unapply both maps
+    map f (map g (x :: xs))
+  end
+\end{code}
+
+\noindent
+\textsc{Exercise 4.4}: Prove that \verb!length (map f xs)! is equal to \verb!length xs! for all \verb!xs!.
+
+\begin{code}
+map-length : {A B : Set} → (f : A → B) → (xs : List A)
+    → length (map f xs) ≡ length xs
+map-length f [] = refl
+map-length f (x :: xs) = cong suc (map-length f xs)
+\end{code}
+
+\noindent
+\textsc{Exercise 4.4}: Define the functions \texttt{take} and \texttt{drop} that respectively return or remove the first $n$ elements of the list (or all elements if the list is shorter). Prove that for any number $n$ and any list \verb!xs!, we have \verb!take n xs ++ drop n xs! = \verb!xs!.
+
+\begin{code}
+take : {A : Set} → Nat → List A → List A
+take zero _ = []
+take (suc n) [] = []
+take (suc n) (x :: xs) = x :: (take n xs)
+
+drop : {A : Set} → Nat → List A → List A
+drop zero xs = xs
+drop (suc n) [] = []
+drop (suc n) (x :: xs) = drop n xs
+\end{code}
+
+\begin{code}
+take-drop : {A : Set} → (n : Nat) → (xs : List A)
+    → take n xs ++ drop n xs ≡ xs
+take-drop zero xs =
+  begin
+    take zero xs ++ drop zero xs
+  ≡⟨⟩ -- Apply take and drop
+    [] ++ xs
+  ≡⟨⟩ -- Apply ++
+    xs
+  end
+take-drop (suc n) [] =
+  begin
+    take (suc n) [] ++ drop (suc n) []
+  ≡⟨⟩ -- Apply take and drop
+    [] ++ []
+  ≡⟨⟩ -- Apply ++
+    []
+  end
+take-drop (suc n) (x :: xs) =
+  begin
+    take (suc n) (x :: xs) ++ drop (suc n) (x :: xs)
+  ≡⟨⟩ -- Apply take and drop
+    (x :: (take n xs)) ++ drop n xs
+  ≡⟨⟩ -- Apply ++
+    x :: (take n xs ++ drop n xs)
+  ≡⟨ cong (x ::_) (take-drop n xs) ⟩
+    x :: xs
+  end
+\end{code}
+
 \end{document}
