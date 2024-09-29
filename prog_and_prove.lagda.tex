@@ -690,12 +690,12 @@ map-length f (x :: xs) = cong suc (map-length f xs)
 \begin{code}
 take : {A : Set} → Nat → List A → List A
 take zero _ = []
-take (suc n) [] = []
+take _ [] = []
 take (suc n) (x :: xs) = x :: (take n xs)
 
 drop : {A : Set} → Nat → List A → List A
 drop zero xs = xs
-drop (suc n) [] = []
+drop _ [] = []
 drop (suc n) (x :: xs) = drop n xs
 \end{code}
 
@@ -727,6 +727,48 @@ take-drop (suc n) (x :: xs) =
     x :: (take n xs ++ drop n xs)
   ≡⟨ cong (x ::_) (take-drop n xs) ⟩
     x :: xs
+  end
+\end{code}
+
+\noindent
+Finally back to Hutton! Note, I am following more the exposition from Hutton than from Cockx.
+
+\begin{code}
+reverse' : {A : Set} → List A → List A → List A
+reverse' [] ys = ys
+reverse' (x :: xs) ys = reverse' xs (x :: ys)
+\end{code}
+
+\begin{code}
+reverse'-reverse : {A : Set} → (xs ys : List A)
+    → reverse' xs ys ≡ reverse xs ++ ys
+reverse'-reverse [] ys = refl
+reverse'-reverse (x :: xs) ys =
+  begin
+    reverse' (x :: xs) ys
+  ≡⟨⟩ -- Apply reverse'
+    reverse' xs (x :: ys)
+  ≡⟨ reverse'-reverse xs (x :: ys) ⟩
+    reverse xs ++ (x :: ys)
+  ≡⟨⟩ -- Unapply ++
+    reverse xs ++ ([ x ] ++ ys)
+  ≡⟨ sym (append-assoc (reverse xs) [ x ] ys) ⟩
+    (reverse xs ++ [ x ]) ++ ys
+  ≡⟨⟩ -- Unapply reverse
+    reverse (x :: xs) ++ ys
+  end
+\end{code}
+
+\begin{code}
+reverse'-reverse-equiv : {A : Set} → (xs : List A)
+    → reverse' xs [] ≡ reverse xs
+reverse'-reverse-equiv xs =
+  begin
+    reverse' xs []
+  ≡⟨ reverse'-reverse xs [] ⟩
+    reverse xs ++ []
+  ≡⟨ append-[] (reverse xs) ⟩
+    reverse xs
   end
 \end{code}
 
