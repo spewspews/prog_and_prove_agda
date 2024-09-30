@@ -772,4 +772,36 @@ reverse'-reverse-equiv xs =
   end
 \end{code}
 
+\begin{code}
+data Tree (A : Set) : Set where
+    Leaf : A → Tree A
+    Node : Tree A → Tree A → Tree A
+
+flatten : {A : Set} → Tree A → List A
+flatten (Leaf x) = [ x ]
+flatten (Node tl tr) = flatten tl ++ flatten tr
+
+flatten' : {A : Set } → Tree A → List A → List A
+flatten' (Leaf x) xs = x :: xs
+flatten' (Node tₗ tᵣ) xs = flatten' tₗ (flatten' tᵣ xs)
+
+flatten'-flatten : {A : Set} → (t : Tree A) → (xs : List A)
+    → flatten' t xs ≡ flatten t ++ xs
+flatten'-flatten (Leaf x) xs = refl
+flatten'-flatten (Node tₗ tᵣ) xs =
+  begin
+    flatten' (Node tₗ tᵣ) xs
+  ≡⟨⟩ -- Apply flatten'
+    flatten' tₗ (flatten' tᵣ xs)
+  ≡⟨ cong (flatten' tₗ) (flatten'-flatten tᵣ xs) ⟩
+    flatten' tₗ (flatten tᵣ ++ xs)
+  ≡⟨ flatten'-flatten tₗ (flatten tᵣ ++ xs) ⟩
+    flatten tₗ ++ (flatten tᵣ ++ xs)
+  ≡⟨ sym (append-assoc (flatten tₗ) (flatten tᵣ) xs) ⟩
+    (flatten tₗ ++ flatten tᵣ) ++ xs
+  ≡⟨⟩ -- Unapply flatten
+    flatten (Node tₗ tᵣ) ++ xs
+  end
+\end{code}
+
 \end{document}
